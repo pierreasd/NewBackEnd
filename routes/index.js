@@ -19,8 +19,9 @@ router.get("/", function (req, res, next) {
 });
 
 // Get article list
-router.get('/getArticle', function (req, res){
-  var author = req.body.author;
+router.get('/getArticle', users.authenticateToken, function (req, res){
+  var author = req.user.name;
+  console.log(req.user)
   var q =
     "SELECT * FROM articles WHERE (author = ? || ? = '') ORDER BY created_datetime DESC LIMIT 6";
 

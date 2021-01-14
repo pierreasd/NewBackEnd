@@ -7,23 +7,7 @@ var express = require("express"),
   bcrypt = require("bcrypt"),
   jwt = require("jsonwebtoken")
 
-/* GET users listing. */
-router.get("/", function (req, res, next) {
-  res.send("respond with a resource");
-});
-router.get("/", (req, res) => {
-  var q = "SELECT * FROM users";
-
-  connection.query(q, [], (error, rows) => {
-    if (error) {
-      console.log(error);
-    } else {
-      response.ok(rows, res);
-    }
-  });
-});
-
-router.post("/", async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const hashed = await bcrypt.hash(req.body.password, 10);
 
@@ -69,6 +53,7 @@ router.post("/login", (req, res) => {
 
 
 function authenticateToken(req, res, next){
+
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
 
