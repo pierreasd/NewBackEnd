@@ -70,6 +70,7 @@ router.post('/postArticle', function (req, res){
 
 })
 
+
 var upload = multer();
 // router.post(
 //   "/uploadImage",
