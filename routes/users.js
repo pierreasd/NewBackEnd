@@ -1,12 +1,15 @@
-var express = require('express'),
- router = express.Router(),
- connection = require('../conn'),
- response = require('../res'),
- bcrypt = require('bcrypt')
+require('dotenv').config()
+
+var express = require("express"),
+  router = express.Router(),
+  connection = require("../conn"),
+  response = require("../res"),
+  bcrypt = require("bcrypt"),
+  jwt = require("jsonwebtoken")
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+router.get("/", function (req, res, next) {
+  res.send("respond with a resource");
 });
 router.get("/", (req, res) => {
   var q = "SELECT * FROM users";
@@ -21,38 +24,66 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  try{
+  try {
     const hashed = await bcrypt.hash(req.body.password, 10);
 
-    var q = "INSERT INTO users (username, password) VALUES (?, ?);"
+    var q = "INSERT INTO users (username, password) VALUES (?, ?);";
 
-    connection.query(q, [
-      req.body.username,
-      hashed
-    ], (error, rows) => {
+    connection.query(q, [req.body.username, hashed], (error, rows) => {
       if (error) {
         console.log(error);
       } else {
         response.ok(rows, res);
       }
     });
-  }catch{
+  } catch {
     res.status(500).send();
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", (req, res) => {
   var q = "SELECT * FROM users WHERE username = (?)";
 
   connection.query(q, [req.body.username], async (error, rows) => {
-    try{
-      await bcrypt.compare(req.body.password, rows[0].password) ? res.status(200).send("Login successful!") : res.status(401).send("Wrong password!");
-    }catch{
+    try {
+      if (await bcrypt.compare(req.body.password, rows[0].password)){
+        const username = req.body.username
+        const user = { name: username }
+        
+        const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+
+        res.json({
+          status: 200,
+          message: "Login successful!",
+          accessToken: accessToken
+        })
+
+      }else{
+        res.status(401).send("Wrong password!")
+      }
+    } catch {
       res.status(500).send();
     }
   });
-
-  
 });
 
-module.exports = router;
+
+function authenticateToken(req, res, next){
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+
+  if(token == null) return res.send(401)
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if(err) return res.send(403)
+    
+    req.user = user
+
+    next()
+  })
+}
+
+module.exports = {
+  router: router,
+  authenticateToken: authenticateToken
+};

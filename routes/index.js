@@ -1,9 +1,9 @@
+
 var express = require("express"),
   router = express.Router(),
   connection = require("../conn"),
-  response = require("../res");
-
-
+  response = require("../res"),
+  users = require("./users")
 
 var multer = require("multer"),
   { v4: uuidv4 } = require("uuid"),
@@ -20,10 +20,13 @@ router.get("/", function (req, res, next) {
 
 // Get article list
 router.get('/getArticle', function (req, res){
+  var author = req.body.author;
   var q =
-    "SELECT * FROM articles ORDER BY created_datetime DESC";
+    "SELECT * FROM articles WHERE (author = ? || ? = '') ORDER BY created_datetime DESC LIMIT 6";
 
-  connection.query(q, [], function (error, rows) {
+  connection.query(q, [
+    author, author
+  ], function (error, rows) {
     if (error) {
       console.log(error);
     } else {
