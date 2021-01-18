@@ -32,23 +32,50 @@ router.post("/register", async (req, res) => {
 router.post("/token", (req, res) => {
   const refreshToken = req.body.token
 
-  if (refreshToken == null) return res.sendStatus(401)
+  if (refreshToken == null) return res.json({
+    status: 401,
+    message: "Unauthorized"
+  })
+  
+  var q = "SELECT COUNT(refresh_token) AS 'cnt' FROM token WHERE refresh_token = (?)"
 
-  if(!refreshTokens.includes(refreshToken)) res.sendStatus(403)
-
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403)
-
-    const accessToken = generateAccessToken({ name: user.name })
-
-    res.json({ accessToken: accessToken })
+  connection.query(q, [refreshToken], (error, rows) => {
+    if(rows[0].cnt === 0 || error){
+      res.json({
+        status: 403,
+        message: "Forbidden"
+      })
+    }else{
+      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403)
+    
+        const accessToken = generateAccessToken({ name: user.name })
+    
+        res.json({ accessToken: accessToken })
+      })
+    }
   })
 });
 
 router.delete("/logout", (req, res) => {
-  refreshTokens = refreshTokens.filter(token => token != req.body.token)
+  var q = "DELETE FROM token WHERE refresh_token = (?)"
 
-  res.sendStatus(204)
+    connection.query(q, [req.body.token], (error) => {
+      if(error){
+        res.json({
+          status: 502,
+          message: error
+        })
+      }else{
+        res.json({
+          status: 200,
+          message: "Logout successful!"
+        })
+      }
+
+    })
+
+
 })
 
 router.post("/login", (req, res) => {
@@ -62,7 +89,10 @@ router.post("/login", (req, res) => {
 
         const accessToken = generateAccessToken(user);
         const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
-        refreshTokens.push(refreshToken)
+
+        var q = "INSERT INTO token (access_token, refresh_token, username) VALUES (?, ? ,?);"
+        connection.query(q, [accessToken, refreshToken, user.name])
+        
         res.json({
           status: 200,
           message: "Login successful!",
@@ -85,7 +115,7 @@ router.post("/login", (req, res) => {
 });
 
 function generateAccessToken(user) {
-  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10m' });
+  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30m' });
 }
 
 function authenticateToken(req, res, next) {
