@@ -70,10 +70,16 @@ router.post("/login", (req, res) => {
           refreshToken: refreshToken,
         });
       } else {
-        res.status(401).send("Wrong password!");
+        res.json({
+          status: 401,
+          message: "Wrong password!"
+        })
       }
     } catch {
-      res.status(500).send();
+      res.json({
+        status: 500,
+        message: "User not found!"
+      })
     }
   });
 });
