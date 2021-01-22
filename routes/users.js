@@ -9,8 +9,6 @@ var express = require("express"),
   bcrypt = require("bcrypt"),
   jwt = require("jsonwebtoken");
 
-let refreshTokens = []
-
 router.post("/register", async (req, res) => {
   try {
     const hashed = await bcrypt.hash(req.body.password, 10);
@@ -25,26 +23,20 @@ router.post("/register", async (req, res) => {
       }
     });
   } catch {
-    res.status(500).send();
+    res.sendStatus(500);
   }
 });
 
 router.post("/token", (req, res) => {
   const refreshToken = req.body.token
 
-  if (refreshToken == null) return res.json({
-    status: 401,
-    message: "Unauthorized"
-  })
+  if (refreshToken == null) return res.sendStatus(401)
   
   var q = "SELECT COUNT(refresh_token) AS 'cnt' FROM token WHERE refresh_token = (?)"
 
   connection.query(q, [refreshToken], (error, rows) => {
     if(rows[0].cnt === 0 || error){
-      res.json({
-        status: 403,
-        message: "Forbidden"
-      })
+      res.sendStatus(403)
     }else{
       jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) return res.sendStatus(403)
@@ -62,10 +54,7 @@ router.delete("/logout", (req, res) => {
 
     connection.query(q, [req.body.token], (error) => {
       if(error){
-        res.json({
-          status: 502,
-          message: error
-        })
+        res.sendStatus(500)
       }else{
         res.json({
           status: 200,
@@ -84,32 +73,27 @@ router.post("/login", (req, res) => {
   connection.query(q, [req.body.username], async (error, rows) => {
     try {
       if (await bcrypt.compare(req.body.password, rows[0].password)) {
-        const username = req.body.username;
-        const user = { name: username };
+        const user = { username: req.body.username };
 
         const accessToken = generateAccessToken(user);
         const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
 
         var q = "INSERT INTO token (access_token, refresh_token, username) VALUES (?, ? ,?);"
-        connection.query(q, [accessToken, refreshToken, user.name])
+        connection.query(q, [accessToken, refreshToken, user.username])
         
         res.json({
           status: 200,
           message: "Login successful!",
+          username: rows[0].username,
+          user_id: rows[0].id,
           accessToken: accessToken,
           refreshToken: refreshToken,
         });
       } else {
-        res.json({
-          status: 401,
-          message: "Wrong password!"
-        })
+        res.sendStatus(401)
       }
     } catch {
-      res.json({
-        status: 500,
-        message: "User not found!"
-      })
+      res.sendStatus(404)
     }
   });
 });
@@ -122,10 +106,10 @@ function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (token == null) return res.send(401);
+  if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.send(403);
+    if (err) return res.sendStatus(403);
 
     req.user = user;
 

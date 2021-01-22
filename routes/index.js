@@ -19,8 +19,8 @@ router.get("/", function (req, res, next) {
 });
 
 // Get article list
-router.get('/getArticle', users.authenticateToken, function (req, res){
-  var author = req.user.name;
+router.get('/getMyArticles', users.authenticateToken, function (req, res){
+  var author = req.user.username;
   
   var q =
     "SELECT * FROM articles WHERE (author = ? || ? = '') ORDER BY created_datetime DESC LIMIT 6";
@@ -58,8 +58,7 @@ router.get('/getArticleDetails/:article_id/', function (req, res){
 router.post('/postArticle', function (req, res){
   var title = req.body.title;
   var body = req.body.body;
-  // var author = req.body.author;
-  var author = "Pierre G";
+  var author = req.body.author;
 
   var q =
     "INSERT INTO articles (title, body, author, created_datetime, uuid) VALUES (?, ?, ?, NOW(), ?);";
