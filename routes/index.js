@@ -18,12 +18,28 @@ router.get("/", function (req, res, next) {
   res.render("index", { title: "Express" });
 });
 
-// Get article list
+// get article list for home page
+router.get('/getArticles', function (req, res){
+
+  var q =
+    "SELECT * FROM articles ORDER BY created_datetime DESC";
+
+  connection.query(q, [], function (error, rows) {
+    if (error) {
+      console.log(error);
+    } else {
+      response.ok(rows, res);
+    }
+  })
+
+});
+
+// Get article list by user
 router.get('/getMyArticles', users.authenticateToken, function (req, res){
   var author = req.user.username;
   
   var q =
-    "SELECT * FROM articles WHERE (author = ? || ? = '') ORDER BY created_datetime DESC LIMIT 6";
+    "SELECT * FROM articles WHERE (author = ? || ? = '') ORDER BY created_datetime DESC";
 
   connection.query(q, [
     author, author
