@@ -101,6 +101,23 @@ router.post('/uploadImages', multipartyMiddleware, (req, res) => {
     fs.rename(tempFilePath, targetPathUrl, err => {
       if(err) return console.log(err)
     })
+
+    // res.json({
+    //   uploaded: true,
+    //   url: targetPathUrl
+    // })
+
+    res.json({
+      uploaded: true
+    })
+  }
+  else{
+    res.json({
+      uploaded: false,
+      error: {
+          message: "could not upload this image"
+      }
+    })
   }
 
   console.log(req.files.upload)
