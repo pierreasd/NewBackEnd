@@ -1,17 +1,18 @@
 
-var express = require("express"),
+const express = require("express"),
   router = express.Router(),
   connection = require("../conn"),
   response = require("../res"),
-  users = require("./users")
-
-var multer = require("multer"),
+  users = require("./users"),
+  // multer = require("multer"),
   { v4: uuidv4 } = require("uuid"),
   fs = require("fs"),
-  { promisify } = require("util"),
-  pipeline = promisify(require("stream").pipeline);
-
-var uuid = uuidv4();
+  // { promisify } = require("util"),
+  // pipeline = promisify(require("stream").pipeline),
+  uuid = uuidv4(),
+  multiparty = require("connect-multiparty"),
+  multipartyMiddleware = multiparty({uploadDir:"./public/images/"}),
+  path = require('path')
 
 /* GET home page. */
 router.get("/", function (req, res, next) {
@@ -22,7 +23,7 @@ router.get("/", function (req, res, next) {
 router.get('/getArticles', function (req, res){
 
   var q =
-    "SELECT * FROM articles ORDER BY created_datetime DESC";
+    "SELECT * FROM articles ORDER BY created_datetime DESC LIMIT 6";
 
   connection.query(q, [], function (error, rows) {
     if (error) {
@@ -50,7 +51,6 @@ router.get('/getMyArticles', users.authenticateToken, function (req, res){
       response.ok(rows, res);
     }
   })
-
 });
 
 // get article by id
@@ -89,34 +89,21 @@ router.post('/postArticle', function (req, res){
 
 })
 
+// upload images. semoga bisa anjrit
 
-var upload = multer();
-// router.post(
-//   "/uploadImage",
-//   upload.single("img_upload"),
-//   async function (req, res, next) {
-//     var {
-//       file,
-//       body: {},
-//     } = req;
+router.post('/uploadImages', multipartyMiddleware, (req, res) => {
+  var tempFile = req.files.upload
+  var tempFilePath  = tempFile.path
 
-//     if (file.detectedFileExtension !== file.clientReportedFileExtension)
-//       next(new Error("why u trynna hack bro :("));
+  const targetPathUrl = path.join(__dirname, "../public/images/" + tempFile.name)
 
-//     var fileName =
-//       uuidv4() +
-//       "_" +
-//       Math.floor(Math.random() * 1000) +
-//       file.detectedFileExtension;
+  if(path.extname(tempFile.originalFilename).toLowerCase() === ".png" || ".jpg" || ".jpeg"){
+    fs.rename(tempFilePath, targetPathUrl, err => {
+      if(err) return console.log(err)
+    })
+  }
 
-//     console.log(file);
-//     await pipeline(
-//       file.stream,
-//       fs.createWriteStream(`${__dirname}/../public/images/${fileName}`)
-//     );
-
-//     res.send("Successfully uploaded file " + fileName);
-//   }
-// );
+  console.log(req.files.upload)
+})
 
 module.exports = router;
