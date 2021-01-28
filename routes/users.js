@@ -1,31 +1,29 @@
-const con = require("../conn");
-
-require("dotenv").config();
+require("dotenv").config()
 
 var express = require("express"),
   router = express.Router(),
   connection = require("../conn"),
   response = require("../res"),
   bcrypt = require("bcrypt"),
-  jwt = require("jsonwebtoken");
+  jwt = require("jsonwebtoken")
 
 router.post("/register", async (req, res) => {
   try {
-    const hashed = await bcrypt.hash(req.body.password, 10);
+    const hashed = await bcrypt.hash(req.body.password, 10)
 
-    var q = "INSERT INTO users (username, password) VALUES (?, ?);";
+    var q = "INSERT INTO users (username, password) VALUES (?, ?)"
 
     connection.query(q, [req.body.username, hashed], (error, rows) => {
       if (error) {
-        console.log(error);
+        console.log(error)
       } else {
-        response.ok(rows, res);
+        response.ok(rows, res)
       }
-    });
+    })
   } catch {
-    res.sendStatus(500);
+    res.sendStatus(500)
   }
-});
+})
 
 router.post("/token", (req, res) => {
   const refreshToken = req.body.token
@@ -47,7 +45,7 @@ router.post("/token", (req, res) => {
       })
     }
   })
-});
+})
 
 router.delete("/logout", (req, res) => {
   var q = "DELETE FROM token WHERE refresh_token = (?)"
@@ -68,17 +66,17 @@ router.delete("/logout", (req, res) => {
 })
 
 router.post("/login", (req, res) => {
-  var q = "SELECT * FROM users WHERE username = (?)";
+  var q = "SELECT * FROM users WHERE username = (?)"
 
   connection.query(q, [req.body.username], async (error, rows) => {
     try {
       if (await bcrypt.compare(req.body.password, rows[0].password)) {
-        const user = { username: req.body.username };
+        const user = { username: req.body.username }
 
-        const accessToken = generateAccessToken(user);
-        const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
+        const accessToken = generateAccessToken(user)
+        const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
 
-        var q = "INSERT INTO token (access_token, refresh_token, username) VALUES (?, ? ,?);"
+        var q = "INSERT INTO token (access_token, refresh_token, username) VALUES (?, ? ,?)"
         connection.query(q, [accessToken, refreshToken, user.username])
         
         res.json({
@@ -88,36 +86,36 @@ router.post("/login", (req, res) => {
           user_id: rows[0].id,
           accessToken: accessToken,
           refreshToken: refreshToken,
-        });
+        })
       } else {
         res.sendStatus(401)
       }
     } catch {
       res.sendStatus(404)
     }
-  });
-});
+  })
+})
 
 function generateAccessToken(user) {
-  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30m' });
+  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30m' })
 }
 
 function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const authHeader = req.headers["authorization"]
+  const token = authHeader && authHeader.split(" ")[1]
 
-  if (token == null) return res.sendStatus(401);
+  if (token == null) return res.sendStatus(401)
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(403)
 
-    req.user = user;
+    req.user = user
 
-    next();
-  });
+    next()
+  })
 }
 
 module.exports = {
   router: router,
   authenticateToken: authenticateToken,
-};
+}
