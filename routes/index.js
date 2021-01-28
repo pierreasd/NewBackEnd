@@ -8,7 +8,7 @@ const express = require("express"),
   fs = require("fs"),
   uuid = uuidv4(),
   multiparty = require("connect-multiparty"),
-  multipartyMiddleware = multiparty({uploadDir:"./public/images/"}),
+  multipartyMiddleware = multiparty({uploadDir:"./public/temp/"}),
   path = require('path')
 
 /* GET home page. */
@@ -102,7 +102,7 @@ router.post('/uploadImages', multipartyMiddleware, (req, res) => {
     
     res.json({
       uploaded: true,
-      img: targetPathUrl
+      url: `http://localhost:8080/public/images/${tempFile.originalFilename}`
     })
   }
   
