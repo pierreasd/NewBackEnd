@@ -102,8 +102,7 @@ router.post('/uploadImages', multipartyMiddleware, (req, res) => {
     
     res.json({
       uploaded: true,
-      url: `http://localhost:8080/public/images/${tempFile.originalFilename}`
-      
+      url: `http://localhost:8080/images/${tempFile.originalFilename}`
     })
   }
   
@@ -115,9 +114,6 @@ router.post('/uploadImages', multipartyMiddleware, (req, res) => {
       }
     })
   }
-  
-  console.log(__dirname)
-  console.log(req.files.upload)
 })
 
 module.exports = router
