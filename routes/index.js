@@ -102,7 +102,7 @@ router.post('/uploadImages', multipartyMiddleware, (req, res) => {
     
     res.json({
       uploaded: true,
-      url: `http://localhost:8080/images/${tempFile.originalFilename}`
+      url: `http://${process.env.API_URL}/images/${tempFile.originalFilename}`
     })
   }
   
