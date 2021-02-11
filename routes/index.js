@@ -20,7 +20,7 @@ router.get("/", function (req, res, next) {
 router.get('/getArticles', function (req, res){
 
   var q =
-    "SELECT * FROM articles ORDER BY created_datetime DESC LIMIT 3"
+    "SELECT * FROM articles ORDER BY created_datetime DESC LIMIT 4"
 
   connection.query(q, [], function (error, rows) {
     if (error) {
