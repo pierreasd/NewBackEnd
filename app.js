@@ -42,8 +42,4 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-app.listen(process.env.port, () => {
-  console.log(`process running on ${process.env.port}`)
-});
-
 module.exports = app;
